@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.database.supabase import SupabaseDB
-from app.services.auth import AuthService
+from backend.app.services.auth_service import AuthService
 from app.models.auth import UserCreate, UserResponse, Token
 
 router = APIRouter()

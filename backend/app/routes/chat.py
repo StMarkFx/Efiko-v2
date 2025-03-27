@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.database.supabase import SupabaseDB
-from app.services.auth import AuthService
-from app.services.chat import ChatService
+from backend.app.services.auth_service import AuthService
+from backend.app.services.chat_service import ChatService
 from app.models.chat import ChatMessage, ChatResponse
 from typing import List
 
