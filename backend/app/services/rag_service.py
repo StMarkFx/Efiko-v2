@@ -1,25 +1,26 @@
 from typing import List, Dict, Any
 import numpy as np
+from sentence_transformers import SentenceTransformer
 from app.models.document import Document, DocumentCreate, DocumentSearch
 from app.database.supabase import SupabaseDB
-from app.config.settings import VECTOR_SIMILARITY_THRESHOLD, MAX_SEARCH_RESULTS
+from app.config.settings import Settings
+
+settings = Settings()
+sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
 
 class RAGService:
     def __init__(self, db: SupabaseDB):
         self.db = db
 
     async def process_document(self, file_content: str, user_id: str) -> Document:
-        # TODO: Implement document processing
-        # 1. Extract text from file
-        # 2. Split into chunks
-        # 3. Generate embeddings
-        # 4. Save to database
+        # Extract text from file (assuming it's already text for now)
+        # TODO: Add support for different file types (PDF, DOCX, etc.)
         
         document = await self.db.add_document(
             user_id=user_id,
             title="Sample Document",  # TODO: Extract from file
             content=file_content,
-            source_type="file"  # TODO: Determine from file type
+            source_type="file"
         )
 
         # Generate chunks and embeddings
@@ -32,18 +33,17 @@ class RAGService:
         return await self.db.get_user_documents(user_id)
 
     async def search_similar_chunks(self, user_id: str, query: str) -> List[Dict[str, Any]]:
-        # TODO: Implement query embedding generation
-        query_embedding = self._generate_embedding(query)
+        # Generate query embedding using sentence transformer
+        query_embedding = sentence_transformer.encode(query).tolist()
         
         return await self.db.search_similar_chunks(
             user_id=user_id,
             query_embedding=query_embedding,
-            limit=MAX_SEARCH_RESULTS
+            limit=settings.max_search_results
         )
 
     def _create_chunks(self, text: str, chunk_size: int = 1000) -> List[Dict[str, Any]]:
-        # TODO: Implement proper text chunking
-        # This is a simple implementation
+        # Split text into chunks
         words = text.split()
         chunks = []
         current_chunk = []
@@ -54,22 +54,19 @@ class RAGService:
             current_size += len(word) + 1  # +1 for space
 
             if current_size >= chunk_size:
+                chunk_text = " ".join(current_chunk)
                 chunks.append({
-                    "content": " ".join(current_chunk),
-                    "embedding": self._generate_embedding(" ".join(current_chunk))
+                    "content": chunk_text,
+                    "embedding": sentence_transformer.encode(chunk_text).tolist()
                 })
                 current_chunk = []
                 current_size = 0
 
         if current_chunk:
+            chunk_text = " ".join(current_chunk)
             chunks.append({
-                "content": " ".join(current_chunk),
-                "embedding": self._generate_embedding(" ".join(current_chunk))
+                "content": chunk_text,
+                "embedding": sentence_transformer.encode(chunk_text).tolist()
             })
 
-        return chunks
-
-    def _generate_embedding(self, text: str) -> List[float]:
-        # TODO: Implement actual embedding generation
-        # This is a placeholder implementation
-        return np.random.rand(1536).tolist()  # Assuming 1536-dimensional embeddings 
+        return chunks 
